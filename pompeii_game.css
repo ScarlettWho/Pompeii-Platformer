@@ -1,0 +1,22 @@
+.background 	{ background: rgb(52, 166, 251);
+				  table-layout: fixed;
+				  border-spacing: 0;	}
+
+.background td { padding: 0;	}
+.wall 		   { background: rgb(30, 150, 152);	}
+.bush		   { background: rgb(55, 50, 100);	}
+.vine		   { background: rgb(20, 30, 40);	}
+.door		   { background: rgb(80, 70, 60);	}
+
+.actor		   { position: absolute;	}
+.b_artifact	   { background: black;	}
+.w_artifact	   { background: white;	}
+.player		   { background: rgb(255, 100, 100);	}
+.crash		   { background: rgb(30, 40, 50);	}
+
+.game {
+	overflow: hidden;
+	max-width: 600px;
+	max-height: 450px;
+	position: relative;
+}
