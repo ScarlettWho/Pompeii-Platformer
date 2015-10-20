@@ -108,8 +108,47 @@ DOMDisplay.prototype.scrollView = function(keys, step) {
 	this.pos = newPos;
 };
 
+var arrowCodes = {37: "left", 38: "up", 39: "right", 40: "down"};
+function trackKeys(codes) {
+	var pressed = Object.create(null);
+
+	function handler(event) {
+		if (codes.hasOwnProperty(event.keyCode)) {
+			var down = event.type == "keydown";
+			event.preventDefault();
+		}
+	}
+
+	addEventListener("keydown", handler);
+	addEventListener("keyup", handler);
+	return pressed;
+}
+
+function runAnimation(frameFunc) {
+	var lastTime = null;
+	function frame(time) {
+		var stop = false;
+		if (lastTime != null) {
+			var timeStep = Math.min(time - lastTime, 100) / 1000;
+			stop = frameFunc(timeStep) === false;
+		}
+
+		lastTime = time;
+		if (!stop)
+			requestAnimationFrame(frame);
+	}
+
+	requestAnimationFrame(frame);
+}
+
+var arrows = trackKeys(arrowCodes);
+
 function runLevel(level, Display) {
 	var display = new Display(document.body, level);
+
+	runAnimation(function(step) {
+		display.scrollView(arrows, step);
+	});
 }
 
 function runGame(plans, Display) {
