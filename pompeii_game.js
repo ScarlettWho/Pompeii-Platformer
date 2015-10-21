@@ -1,16 +1,19 @@
 function Level(blueprint) {
-	this.width = blueprint[0].length;
-	this.height = blueprint.length;
-	this.grid = [];
+//  'blueprint' refers to the parameters of the level plan as a whole
+	this.width = blueprint[0].length; //  this sets the width by grabbing the length of a single row
+	this.height = blueprint.length;   //  this sets the height by grabbing the number of total rows
+	this.grid = [];					  //  the tiles get stored in an array called 'grid'
 
 	for (var y = 0; y < this.height; y++) {
 		var line = blueprint[y], gridLine = [];
 
+		//  this for loop will loo for each element in the plan and assign that element a field type
 		for (var x = 0; x < this.width; x++) {
 			var ch = line[x], fieldType = null;
 
+			//  This series of statements looks for the specified characters in the level .js and recognizes the classes
 			if (ch === "@")
-				this.player = new playerProp(new Vector(x,y));
+				this.player = new playerProp(new Vector(x,y));  //  Creates a new player at the grid position
 			else if (ch == "x")
 				fieldType = "wall";
 			else if (ch == "b")
@@ -18,15 +21,17 @@ function Level(blueprint) {
 			gridLine.push(fieldType);
 		}
 
+		//  What does 'push' mean/do?
 		this.grid.push(gridLine);
 	}
 }
 
-//What does this vector function refer to and control?
+//  What does this vector function refer to and control?
 function Vector(x, y) {
 	this.x = x; this.y = y;
 }
 
+//  What does prototype do?
 Vector.prototype.plus = function(other) {
 	return new Vector(this.x + other.x, this.y + other.y);
 };
@@ -35,8 +40,9 @@ Vector.prototype.times = function(factor) {
 	return new Vector(this.x * factor, this.y * factor);
 };
 
+//  This function outlines and controls the properties of the player
 function playerProp(pos) {
-	this.pos = pos.plus(new Vector(0, -0.05));
+	this.pos = pos.plus(new Vector(0, -1));
 	this.size = new Vector (0.8, 1.5);
 	this.speed = new Vector(0,0);
 }
@@ -49,13 +55,11 @@ function elmnt(name,className) {
 }
 
 function DOMDisplay(parent, level) {
-	this.wrap = parent.appendChild(elmnt("div", "game"));
+	this.wrap = parent.appendChild(elmnt("div", "game"));  //  Corresponds to the div with "game" class created in the css
 	this.level = level;
-	//this.pos = new Vector(0, -0.5);
-	//this.speed = new Vector(0,0);
 	this.wrap.appendChild(this.drawBackground());
-	this.actorLayer = null;
-	this.drawFrame();
+	this.actorLayer = null;				//  Keeps track of the actors
+	this.drawFrame();					//  Updates the world based on the player's position
 }
 
 var scale = 20;
@@ -73,6 +77,7 @@ DOMDisplay.prototype.drawBackground = function() {
 	return table;
 };
 
+//  This function will draw the player on the screen
 DOMDisplay.prototype.drawPlayer = function() {
 	var wrap = elmnt("div");
 	var actor = this.level.player;
@@ -95,8 +100,9 @@ DOMDisplay.prototype.scrollPlayerIntoView = function() {
 	var width = this.wrap.clientWidth;
 	var height = this.wrap.clientHeight;
 
-	var margin = width / 3;
+	var margin = width / 3;		//  Gives a padding between the player and the screen
 
+	//  Creates the viewport
 	var left = this.wrap.scrollLeft, right = left + width;
 	var top = this.wrap.scrollTop, bottom = top + height;
 
