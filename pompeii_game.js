@@ -1,45 +1,25 @@
-/*var activeChars = {
-	"@": Player,
-	"#": Marco,
-	"a": whiteAtfct,
-	"A": blackAtfct,
-	"h": Hand,
-	"M": keyAtfct,
-	"V": Boss,
-	"N": Enemy,
-	"-": brkblWall
-}; */
-
 function Level(blueprint) {
 	this.width = blueprint[0].length;
 	this.height = blueprint.length;
 	this.grid = [];
-	//this.actors = [];
 
 	for (var y = 0; y < this.height; y++) {
 		var line = blueprint[y], gridLine = [];
 
 		for (var x = 0; x < this.width; x++) {
 			var ch = line[x], fieldType = null;
-			//var Actor = activeChars[ch];
 
-			//if (Actor)
-			//	this.actors.push(new Actor(new Vector(x, y), ch));
-			if (ch == "x")
+			if (ch === "@")
+				this.player = new playerProp(new Vector(x,y));
+			else if (ch == "x")
 				fieldType = "wall";
 			else if (ch == "b")
 				fieldType = "bush";
-			else if (ch == "s")
-				fieldType = "vine";
-			//else if (ch == "c")
-				//fieldType = "door";
 			gridLine.push(fieldType);
 		}
+
 		this.grid.push(gridLine);
 	}
-	//this.player = this.actors.filter(function(actor) {
-		//return actor.type == "player";
-	//})[0];
 }
 
 //What does this vector function refer to and control?
@@ -49,11 +29,18 @@ function Vector(x, y) {
 
 Vector.prototype.plus = function(other) {
 	return new Vector(this.x + other.x, this.y + other.y);
-}
+};
 
 Vector.prototype.times = function(factor) {
 	return new Vector(this.x * factor, this.y * factor);
+};
+
+function playerProp(pos) {
+	this.pos = pos.plus(new Vector(0, -0.05));
+	this.size = new Vector (0.8, 1.5);
+	this.speed = new Vector(0,0);
 }
+playerProp.prototype.type = "player";
 
 function elmnt(name,className) {
 	var elmnt = document.createElement(name);
@@ -64,12 +51,14 @@ function elmnt(name,className) {
 function DOMDisplay(parent, level) {
 	this.wrap = parent.appendChild(elmnt("div", "game"));
 	this.level = level;
-	this.pos = new Vector(0, -0.5);
-	this.speed = new Vector(0,0);
+	//this.pos = new Vector(0, -0.5);
+	//this.speed = new Vector(0,0);
 	this.wrap.appendChild(this.drawBackground());
+	this.actorLayer = null;
+	this.drawFrame();
 }
 
-var scale = 10;
+var scale = 20;
 
 DOMDisplay.prototype.drawBackground = function() {
 	var table = elmnt("table", "background");
@@ -84,37 +73,129 @@ DOMDisplay.prototype.drawBackground = function() {
 	return table;
 };
 
-var scrollXSpeed = 100;
-var scrollYSpeed = 100;
+DOMDisplay.prototype.drawPlayer = function() {
+	var wrap = elmnt("div");
+	var actor = this.level.player;
+	var rect = wrap.appendChild(elmnt("div", "actor " + actor.type));
+	rect.style.width = actor.size.x * scale + "px";
+	rect.style.height = actor.size.y * scale + "px";
+	rect.style.left = actor.pos.x * scale + "px";
+	rect.style.top = actor.pos.y * scale + "px";
+	return wrap;
+};
 
-DOMDisplay.prototype.scrollView = function(keys, step) {
+DOMDisplay.prototype.drawFrame = function() {
+	if (this.actorLayer)
+		this.wrap.removeChild(this.actorLayer);
+	this.actorLayer = this.wrap.appendChild(this.drawPlayer());
+	this.scrollPlayerIntoView();
+};
+
+DOMDisplay.prototype.scrollPlayerIntoView = function() {
 	var width = this.wrap.clientWidth;
-	var maxWidth = this.wrap.scrollWidth;
 	var height = this.wrap.clientHeight;
-	var maxHeight = this.wrap.scrollHeight;
 
+	var margin = width / 3;
+
+	var left = this.wrap.scrollLeft, right = left + width;
+	var top = this.wrap.scrollTop, bottom = top + height;
+
+	var player = this.level.player;
+	var center = player.pos.plus(player.size.times(0.5)).times(scale);
+
+	if (center.x < left + margin)
+		this.wrap.scrollLeft = center.x - margin;
+	else if (center.x > right - margin)
+		this.wrap.scrollLeft = center.x + margin - width;
+
+	if (center.y < top + margin)
+		this.wrap.scrollTop = center.y - margin;
+	else if (center.y > bottom - margin)
+		this.wrap.scrollTop = center.y + margin - height;
+};
+
+Level.prototype.obstacleAt = function(pos, size) {
+	var xStart = Math.floor(pos.x);
+	var xEnd = Math.ceil(pos.x + size.x);
+	var yStart = Math.floor(pos.y);
+	var yEnd = Math.ceil(pos.y + size.y);
+
+	if (xStart < 0 || xEnd > this.width || yStart < 0 || yEnd > this.height)
+		return "wall";
+
+	for (var y = yStart; y < yEnd; y++) {
+		for (var x = xStart; x < xEnd; x++) {
+			var fieldType = this.grid[y][x];
+			if (fieldType) return fieldType;
+		}
+	}
+};
+
+Level.prototype.animate = function(step, keys) {
+	while (step > 0) {
+		var thisStep = Math.min(step, maxStep);
+		this.player.act(thisStep, this, keys);
+		step -= thisStep;
+	}
+};
+
+var maxStep = 0.05;
+var playerXSpeed = 7;
+
+playerProp.prototype.moveX = function(step, level, keys) {
 	this.speed.x = 0;
-	if (keys.left && this.pos.x > 0) this.speed.x -= scrollXSpeed;
-	if (keys.right && (this.pos.x < (maxWidth - width))) this.speed.x += scrollXSpeed;
+	if (keys.left) this.speed.x -= playerXSpeed;
+	if (keys.right) this.speed.x += playerXSpeed;
 
-	this.speed.y = 0;
-	if (keys.up && this.pos.y > 0) this.speed.y -= scrollYSpeed;
-	if (keys.down && (this.pos.y < (maxHeight - height))) this.speed.y += scrollYSpeed;
-
-	var motion = new Vector(this.speed.x * step, this.speed.y * step);
+	var motion = new Vector(this.speed.x * step, 0);
 	var newPos = this.pos.plus(motion);
-	this.wrap.scrollLeft = newPos.x;
-	this.wrap.scrollTop = newPos.y;
-	this.pos = newPos;
+	var obstacle = level.obstacleAt(newPos, this.size);
+
+	if (obstacle != "wall")
+		this.pos = newPos;
+};
+
+var gravity = 30;
+var jumpSpeed = 17;
+var playerYSpeed = 7;
+
+playerProp.prototype.moveY = function(step, level, keys) {
+	//this.speed.y = 0;
+	//if (keys.up) this.speed.y -= playerYSpeed;
+	//if (keys.down) this.speed.y += playerYSpeed;
+	
+	//  Accelerates the player downward always - inacts gravity
+	this.speed.y += step * gravity;
+	var motion = new Vector(0, this.speed.y * step);
+	var newPos = this.pos.plus(motion);
+	var obstacle = level.obstacleAt(newPos, this.size);
+
+	//  This will only allow a player to jump if they are touching an obstacle (i.e. the floor)
+	if (obstacle) {
+		if (keys.up && this.speed.y > 0)
+			this.speed.y = -jumpSpeed;
+		else
+			this.speed.y = 0
+	}
+	else {
+		this.pos = newPos;
+	}
+};
+
+playerProp.prototype.act = function(step, level, keys) {
+	this.moveX(step, level, keys);
+	this.moveY(step, level, keys);
 };
 
 var arrowCodes = {37: "left", 38: "up", 39: "right", 40: "down"};
+
 function trackKeys(codes) {
 	var pressed = Object.create(null);
 
 	function handler(event) {
 		if (codes.hasOwnProperty(event.keyCode)) {
 			var down = event.type == "keydown";
+			pressed[codes[event.keyCode]] = down;
 			event.preventDefault();
 		}
 	}
@@ -147,7 +228,8 @@ function runLevel(level, Display) {
 	var display = new Display(document.body, level);
 
 	runAnimation(function(step) {
-		display.scrollView(arrows, step);
+		level.animate(step, arrows);
+		display.drawFrame(step);
 	});
 }
 
