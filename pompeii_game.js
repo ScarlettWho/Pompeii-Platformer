@@ -2,6 +2,7 @@
 var activeChars = {
 	"@": playerProp,
 	"a": bArtifact,		//  black stone will spin or wobble
+	"b": Bush
 	//"A": wArtifact,		//  white stone will spin or wobble faster than black stone
 	//"h": Hand,			//  hands will reach up from the ground and move upand down
 	//"N": Enemy,			//  enemies will pace in small areas
@@ -73,6 +74,16 @@ function bArtifact(pos) {
 	this.wobble = Math.random() * Math.PI * 2;
 }
 bArtifact.prototype.type = "bartifact";
+
+function Bush(pos,ch) {
+	this.pos = pos;
+	this.size = new Vector(1, 1);
+	if (ch == "b") {
+		this.speed = new Vector(2, 0);
+	}
+}
+
+Bush.prototype.type = "bush";
 
 function elmnt(name,className) {
 	var elmnt = document.createElement(name);
@@ -189,6 +200,16 @@ Level.prototype.animate = function(step, keys) {
 		}, this);
 		step -= thisStep;
 	}
+};
+
+Bush.prototype.act = function(step, level) {
+	var newPos = this.pos.plus(this.speed.times(step));
+	if (!level.obstacleAt(newPos, this.size))
+		this.pos = newPos;
+	else if (this.repeatPos)
+		this.pos = this.repeatPos;
+	else
+		this.speed = this.speed.times(-1);
 };
 
 var wobbleSpeed = 8;
