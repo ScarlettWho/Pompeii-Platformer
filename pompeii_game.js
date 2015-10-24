@@ -1,8 +1,20 @@
+//  Map out each character class
+var activeChars = {
+	"@": playerProp,
+	"a": bArtifact,		//  black stone will spin or wobble
+	//"A": wArtifact,		//  white stone will spin or wobble faster than black stone
+	//"h": Hand,			//  hands will reach up from the ground and move upand down
+	//"N": Enemy,			//  enemies will pace in small areas
+	//"#": Friend,		//  Marco will alert player and then join player
+	//"V": Boss			//  Boss will move negatively across the level as in a race
+};
+
 function Level(blueprint) {
 //  'blueprint' refers to the parameters of the level plan as a whole
 	this.width = blueprint[0].length; //  this sets the width by grabbing the length of a single row
 	this.height = blueprint.length;   //  this sets the height by grabbing the number of total rows
 	this.grid = [];					  //  the tiles get stored in an array called 'grid'
+	this.actors = [];	// this stores a list of actors to process each frame
 
 	for (var y = 0; y < this.height; y++) {
 		var line = blueprint[y], gridLine = [];
@@ -10,10 +22,11 @@ function Level(blueprint) {
 		//  this for loop will loo for each element in the plan and assign that element a field type
 		for (var x = 0; x < this.width; x++) {
 			var ch = line[x], fieldType = null;
+			var Actor = activeChars[ch];
 
 			//  This series of statements looks for the specified characters in the level .js and recognizes the classes
-			if (ch === "@")
-				this.player = new playerProp(new Vector(x,y));  //  Creates a new player at the grid position
+			if (Actor)
+				this.actors.push(new Actor(new Vector(x,y), ch));  //  Creates a new actor at the grid position
 			else if (ch == "x")
 				fieldType = "wall";
 			else if (ch == "b")
@@ -24,6 +37,11 @@ function Level(blueprint) {
 		//  What does 'push' mean/do?
 		this.grid.push(gridLine);
 	}
+
+	//  This will find and assign the player character and then assign it to Level.player
+	this.player = this.actors.filter(function(actor) {
+		return actor.type == "player";
+	})[0];
 }
 
 //  What does this vector function refer to and control?
@@ -47,6 +65,14 @@ function playerProp(pos) {
 	this.speed = new Vector(0,0);
 }
 playerProp.prototype.type = "player";
+
+//  This will outline and control bArtifact
+function bArtifact(pos) {
+	this.basePos = this.pos = pos.plus(new Vector(0.2, 0.1));
+	this.size = new Vector(0.6, 0.6);
+	this.wobble = Math.random() * Math.PI * 2;
+}
+bArtifact.prototype.type = "bartifact";
 
 function elmnt(name,className) {
 	var elmnt = document.createElement(name);
@@ -78,21 +104,24 @@ DOMDisplay.prototype.drawBackground = function() {
 };
 
 //  This function will draw the player on the screen
-DOMDisplay.prototype.drawPlayer = function() {
+DOMDisplay.prototype.drawActors = function() {
 	var wrap = elmnt("div");
-	var actor = this.level.player;
-	var rect = wrap.appendChild(elmnt("div", "actor " + actor.type));
-	rect.style.width = actor.size.x * scale + "px";
-	rect.style.height = actor.size.y * scale + "px";
-	rect.style.left = actor.pos.x * scale + "px";
-	rect.style.top = actor.pos.y * scale + "px";
+
+	this.level.actors.forEach(function(actor) {
+		var rect = wrap.appendChild(elmnt("div", "actor " + actor.type));
+		rect.style.width = actor.size.x * scale + "px";
+		rect.style.height = actor.size.y * scale + "px";
+		rect.style.left = actor.pos.x * scale + "px";
+		rect.style.top = actor.pos.y * scale + "px";
+	});
+	
 	return wrap;
 };
 
 DOMDisplay.prototype.drawFrame = function() {
 	if (this.actorLayer)
 		this.wrap.removeChild(this.actorLayer);
-	this.actorLayer = this.wrap.appendChild(this.drawPlayer());
+	this.actorLayer = this.wrap.appendChild(this.drawActors());
 	this.scrollPlayerIntoView();
 };
 
@@ -120,6 +149,7 @@ DOMDisplay.prototype.scrollPlayerIntoView = function() {
 		this.wrap.scrollTop = center.y + margin - height;
 };
 
+//  Collision detection
 Level.prototype.obstacleAt = function(pos, size) {
 	var xStart = Math.floor(pos.x);
 	var xEnd = Math.ceil(pos.x + size.x);
@@ -137,12 +167,37 @@ Level.prototype.obstacleAt = function(pos, size) {
 	}
 };
 
+//  Actor collision detection
+Level.prototype.actorAt = function(actor) {
+	for (var i = 0; i < this.actors.length; i++) {
+		var other = this.actors[i];
+
+		if (other != actor &&
+			actor.pos.x + actor.size.x > other.pos.x &&
+			actor.pos.x < other.pos.x + other.size.x &&
+			actor.pos.y + actor.size.y > other.pos.y &&
+			actor.pos.y < other.pos.y + other.size.y)
+			return other;
+	}
+};
+
 Level.prototype.animate = function(step, keys) {
 	while (step > 0) {
 		var thisStep = Math.min(step, maxStep);
-		this.player.act(thisStep, this, keys);
+		this.actors.forEach(function(actor){
+			actor.act(thisStep, this, keys);
+		}, this);
 		step -= thisStep;
 	}
+};
+
+var wobbleSpeed = 8;
+var wobbleDist = 0.07;
+
+bArtifact.prototype.act = function(step) {
+	this.wobble += step * wobbleSpeed;
+	var wobblePos = Math.sin(this.wobble) * wobbleDist;
+	this.pos = this.basePos.plus(new Vector(0, wobblePos));
 };
 
 var maxStep = 0.05;
@@ -191,9 +246,21 @@ playerProp.prototype.moveY = function(step, level, keys) {
 playerProp.prototype.act = function(step, level, keys) {
 	this.moveX(step, level, keys);
 	this.moveY(step, level, keys);
+
+	var otherActor = level.actorAt(this);
+	if (otherActor)
+		level.playerCollide(otherActor.type, otherActor);
 };
 
-var arrowCodes = {37: "left", 38: "up", 39: "right", 40: "down"};
+Level.prototype.playerCollide = function(type, actor) {
+	if (type == "bArtifact") {
+		this.actors = this.actors.filter(function(other) {
+			return other != actor;
+		});
+	}
+};
+
+var arrowCodes = {37: "left", 38: "up", 39: "right"};
 
 function trackKeys(codes) {
 	var pressed = Object.create(null);
