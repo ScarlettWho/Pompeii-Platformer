@@ -45,6 +45,11 @@ function Level(blueprint) {
 	})[0];
 }
 
+//  Check if level is finished
+Level.prototype.complete = function() {
+	return this.status != null && this.finishDelay < 0;
+};
+
 //  What does this vector function refer to and control?
 function Vector(x, y) {
 	this.x = x; this.y = y;
@@ -79,7 +84,7 @@ function Bush(pos,ch) {
 	this.pos = pos;
 	this.size = new Vector(1, 1);
 	if (ch == "b") {
-		this.speed = new Vector(2, 0);
+		this.speed = new Vector(0, 0);
 	}
 }
 
@@ -99,7 +104,7 @@ function DOMDisplay(parent, level) {
 	this.drawFrame();					//  Updates the world based on the player's position
 }
 
-var scale = 20;
+var scale = 30;
 
 DOMDisplay.prototype.drawBackground = function() {
 	var table = elmnt("table", "background");
@@ -133,6 +138,7 @@ DOMDisplay.prototype.drawFrame = function() {
 	if (this.actorLayer)
 		this.wrap.removeChild(this.actorLayer);
 	this.actorLayer = this.wrap.appendChild(this.drawActors());
+	this.wrap.className = "game " + (this.level.status || "");
 	this.scrollPlayerIntoView();
 };
 
@@ -160,6 +166,10 @@ DOMDisplay.prototype.scrollPlayerIntoView = function() {
 		this.wrap.scrollTop = center.y + margin - height;
 };
 
+DOMDisplay.prototype.clear = function() {
+	this.wrap.parentNode.removeChild(this.wrap);
+};
+
 //  Collision detection
 Level.prototype.obstacleAt = function(pos, size) {
 	var xStart = Math.floor(pos.x);
@@ -167,8 +177,10 @@ Level.prototype.obstacleAt = function(pos, size) {
 	var yStart = Math.floor(pos.y);
 	var yEnd = Math.ceil(pos.y + size.y);
 
-	if (xStart < 0 || xEnd > this.width || yStart < 0 || yEnd > this.height)
+	if (xStart < 0 || xEnd > this.width || yStart < 0)
 		return "wall";
+	if (yEnd > this.height)
+		return "bush";
 
 	for (var y = yStart; y < yEnd; y++) {
 		for (var x = xStart; x < xEnd; x++) {
@@ -193,6 +205,8 @@ Level.prototype.actorAt = function(actor) {
 };
 
 Level.prototype.animate = function(step, keys) {
+	if (this.status != null)
+		this.finishDelay -= step;
 	while (step > 0) {
 		var thisStep = Math.min(step, maxStep);
 		this.actors.forEach(function(actor){
@@ -233,7 +247,10 @@ playerProp.prototype.moveX = function(step, level, keys) {
 	var newPos = this.pos.plus(motion);
 	var obstacle = level.obstacleAt(newPos, this.size);
 
-	if (obstacle != "wall")
+	
+	if (obstacle)
+		level.playerCollide(obstacle);
+	else
 		this.pos = newPos;
 };
 
@@ -241,11 +258,7 @@ var gravity = 30;
 var jumpSpeed = 17;
 var playerYSpeed = 7;
 
-playerProp.prototype.moveY = function(step, level, keys) {
-	//this.speed.y = 0;
-	//if (keys.up) this.speed.y -= playerYSpeed;
-	//if (keys.down) this.speed.y += playerYSpeed;
-	
+playerProp.prototype.moveY = function(step, level, keys) {	
 	//  Accelerates the player downward always - inacts gravity
 	this.speed.y += step * gravity;
 	var motion = new Vector(0, this.speed.y * step);
@@ -254,6 +267,7 @@ playerProp.prototype.moveY = function(step, level, keys) {
 
 	//  This will only allow a player to jump if they are touching an obstacle (i.e. the floor)
 	if (obstacle) {
+		level.playerCollide(obstacle);
 		if (keys.up && this.speed.y > 0)
 			this.speed.y = -jumpSpeed;
 		else
@@ -271,14 +285,31 @@ playerProp.prototype.act = function(step, level, keys) {
 	var otherActor = level.actorAt(this);
 	if (otherActor)
 		level.playerCollide(otherActor.type, otherActor);
+	if (level.status == "lost") {
+		this.pos.y += step;
+		this.size.y -= step;
+	}
 };
 
 Level.prototype.playerCollide = function(type, actor) {
-	if (type == "bArtifact") {
+	if (type == "bush" && this.status == null) {
+		this.status = "lost"
+		this.finishDelay = 1;
+	}
+	else if (type == "bartifact") {
 		this.actors = this.actors.filter(function(other) {
 			return other != actor;
 		});
+
+	if (!this.actors.some(function(actor) {
+			return actor.type == "bartifact";
+		})) {
+			
+			this.status = "won";
+			this.finishDelay = 1;
+		}
 	}
+
 };
 
 var arrowCodes = {37: "left", 38: "up", 39: "right"};
@@ -318,18 +349,31 @@ function runAnimation(frameFunc) {
 
 var arrows = trackKeys(arrowCodes);
 
-function runLevel(level, Display) {
+function runLevel(level, Display, next) {
 	var display = new Display(document.body, level);
 
 	runAnimation(function(step) {
 		level.animate(step, arrows);
 		display.drawFrame(step);
+		if (level.complete()) {
+			display.clear;
+		if (next)
+			next(level.status);
+		return false;
+		}
 	});
 }
 
 function runGame(plans, Display) {
 	function startLevel(n) {
-		runLevel(new Level(plans[n]), Display);
+		runLevel(new Level(plans[n]), Display, function(status) {
+			if (status == "lost")
+				startLevel(n);
+			else if (n < plans.length - 1)
+				startLevel(n + 1);
+			else
+				console.log("Winner!");
+		});
 	}
 	startLevel(0);
 }
