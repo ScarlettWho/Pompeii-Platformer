@@ -5,6 +5,8 @@
 .background td { padding: 0;	}
 .wall 		   { background: rgb(102, 102, 0);	}
 .bush		   { background: rgb(51, 102, 0);	}
+.hand		   {background: rgb(153, 153, 0);	}
+.enemy		   {background: rgb(76, 0, 153);	}
 
 .actor		   { position: absolute;	}
 .bartifact	   { background: rgb(64, 64, 64);	}
