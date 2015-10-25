@@ -2,10 +2,10 @@
 var activeChars = {
 	"@": playerProp,
 	"a": bArtifact,		//  black stone will spin or wobble
-	"b": Bush
-	//"A": wArtifact,		//  white stone will spin or wobble faster than black stone
-	//"h": Hand,			//  hands will reach up from the ground and move upand down
-	//"N": Enemy,			//  enemies will pace in small areas
+	"b": Bush,
+	"A": wArtifact,		//  white stone will spin or wobble faster than black stone
+	"h": Hand,			//  hands will reach up from the ground and move upand down
+	"N": Enemy,			//  enemies will pace in small areas
 	//"#": Friend,		//  Marco will alert player and then join player
 	//"V": Boss			//  Boss will move negatively across the level as in a race
 };
@@ -20,7 +20,7 @@ function Level(blueprint) {
 	for (var y = 0; y < this.height; y++) {
 		var line = blueprint[y], gridLine = [];
 
-		//  this for loop will loo for each element in the plan and assign that element a field type
+		//  this for loop will look for each element in the plan and assign that element a field type
 		for (var x = 0; x < this.width; x++) {
 			var ch = line[x], fieldType = null;
 			var Actor = activeChars[ch];
@@ -32,6 +32,10 @@ function Level(blueprint) {
 				fieldType = "wall";
 			else if (ch == "b")
 				fieldType = "bush";
+			else if (ch == "h")
+				fieldType = "hand";
+			else if (ch == "N")
+				fieldType = "enemy";
 			gridLine.push(fieldType);
 		}
 
@@ -46,16 +50,16 @@ function Level(blueprint) {
 }
 
 //  Check if level is finished
-Level.prototype.complete = function() {
+Level.prototype.done = function() {
 	return this.status != null && this.finishDelay < 0;
 };
 
-//  What does this vector function refer to and control?
+//  "What does this vector function refer to and control?
 function Vector(x, y) {
 	this.x = x; this.y = y;
 }
 
-//  What does prototype do?
+//  "What does prototype do?
 Vector.prototype.plus = function(other) {
 	return new Vector(this.x + other.x, this.y + other.y);
 };
@@ -77,20 +81,45 @@ function bArtifact(pos) {
 	this.basePos = this.pos = pos.plus(new Vector(0.2, 0.1));
 	this.size = new Vector(0.6, 0.6);
 	this.wobble = Math.random() * Math.PI * 2;
-}
+	var collection = 0
+}	
 bArtifact.prototype.type = "bartifact";
 
-function Bush(pos,ch) {
+function Bush(pos, ch) {
 	this.pos = pos;
 	this.size = new Vector(1, 1);
 	if (ch == "b") {
 		this.speed = new Vector(0, 0);
 	}
 }
-
 Bush.prototype.type = "bush";
 
-function elmnt(name,className) {
+function Hand(pos, ch) {
+	this.pos = pos;
+	this.size = new Vector(0.7, 1);
+	if (ch == "h") {
+		this.speed = new Vector(0, 2);
+	}
+}
+Hand.prototype.type = "hand";
+
+function Enemy(pos, ch) {
+	this.pos = pos;
+	this.size = new Vector (1, 1);
+	if (ch == "N") {
+		this.speed = new Vector (1.5, 0);
+	}
+}
+Enemy.prototype.type = "enemy";
+
+function wArtifact(pos) {
+	this.basePos = this.pos = pos.plus(new Vector(0.2, 0.1));
+	this.size = new Vector(0.6, 0.6);
+	this.wobble = Math.random() * Math.PI * 2;
+}
+wArtifact.prototype.type = "wartifact";
+
+function elmnt(name, className) {
 	var elmnt = document.createElement(name);
 	if (className) elmnt.className = className;
 		return elmnt;
@@ -180,7 +209,7 @@ Level.prototype.obstacleAt = function(pos, size) {
 	if (xStart < 0 || xEnd > this.width || yStart < 0)
 		return "wall";
 	if (yEnd > this.height)
-		return "bush";
+		return "bush", "hand", "enemy";
 
 	for (var y = yStart; y < yEnd; y++) {
 		for (var x = xStart; x < xEnd; x++) {
@@ -226,10 +255,37 @@ Bush.prototype.act = function(step, level) {
 		this.speed = this.speed.times(-1);
 };
 
+//var reachSpeed = 9;
+//var reachDist = 0.5;
+
+Hand.prototype.act = function(step, level) {
+	var newPos = this.pos.plus(this.speed.times(step));
+	if (!level.obstacleAt(newPos, this.size))
+		this.pos = newPos;
+	else
+		this.speed = this.speed.times(-1);
+};
+
+Enemy.prototype.act = function(step, level) {
+	var newPos = this.pos.plus(this.speed.times(step));
+	if (!level.obstacleAt(newPos, this.size))
+		this.pos = newPos;
+	else if (this.repeatPos)
+		this.pos = this.repeatPos;
+	else
+		this.speed = this.speed.times(-1);
+}
+
 var wobbleSpeed = 8;
 var wobbleDist = 0.07;
 
 bArtifact.prototype.act = function(step) {
+	this.wobble += step * wobbleSpeed;
+	var wobblePos = Math.sin(this.wobble) * wobbleDist;
+	this.pos = this.basePos.plus(new Vector(0, wobblePos));
+};
+
+wArtifact.prototype.act = function(step) {
 	this.wobble += step * wobbleSpeed;
 	var wobblePos = Math.sin(this.wobble) * wobbleDist;
 	this.pos = this.basePos.plus(new Vector(0, wobblePos));
@@ -292,17 +348,18 @@ playerProp.prototype.act = function(step, level, keys) {
 };
 
 Level.prototype.playerCollide = function(type, actor) {
-	if (type == "bush" && this.status == null) {
+	if (type == "bush" && this.status == null || 
+		type == "hand" && this.status == null || 
+		type == "enemy" && this.status == null) {
 		this.status = "lost"
 		this.finishDelay = 1;
 	}
-	else if (type == "bartifact") {
+	else if (type == "bartifact" || type == "wartifact") {
 		this.actors = this.actors.filter(function(other) {
 			return other != actor;
 		});
-
 	if (!this.actors.some(function(actor) {
-			return actor.type == "bartifact";
+			return actor.type == "bartifact" || actor.type == "wartifact";
 		})) {
 			
 			this.status = "won";
@@ -355,11 +412,12 @@ function runLevel(level, Display, next) {
 	runAnimation(function(step) {
 		level.animate(step, arrows);
 		display.drawFrame(step);
-		if (level.complete()) {
+		if (level.done()) {
 			display.clear;
-		if (next)
-			next(level.status);
-		return false;
+			console.log("Cleared");
+			if (next)
+				next(level.status);
+			return false;
 		}
 	});
 }
