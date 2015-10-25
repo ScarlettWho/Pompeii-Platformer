@@ -4,9 +4,10 @@ var activeChars = {
 	"a": bArtifact,		//  black stone will spin or wobble
 	"b": Bush,
 	"A": wArtifact,		//  white stone will spin or wobble faster than black stone
-	"h": Hand,			//  hands will reach up from the ground and move upand down
+	"h": Hand,			//  hands will reach up from the ground and move up and down
 	"N": Enemy,			//  enemies will pace in small areas
-	//"#": Friend,		//  Marco will alert player and then join player
+	//"M": infoMarco	//  Marco will alert player
+	//"#": Friend,		//  Marco will move alonside player
 	//"V": Boss			//  Boss will move negatively across the level as in a race
 };
 
@@ -36,6 +37,8 @@ function Level(blueprint) {
 				fieldType = "hand";
 			else if (ch == "N")
 				fieldType = "enemy";
+			//else if (ch == "M");
+				//fieldType = "wisdom";
 			gridLine.push(fieldType);
 		}
 
@@ -81,9 +84,15 @@ function bArtifact(pos) {
 	this.basePos = this.pos = pos.plus(new Vector(0.2, 0.1));
 	this.size = new Vector(0.6, 0.6);
 	this.wobble = Math.random() * Math.PI * 2;
-	var collection = 0
 }	
 bArtifact.prototype.type = "bartifact";
+
+function wArtifact(pos) {
+	this.basePos = this.pos = pos.plus(new Vector(0.2, 0.1));
+	this.size = new Vector(0.6, 0.6);
+	this.wobble = Math.random() * Math.PI * 4;
+}
+wArtifact.prototype.type = "wartifact";
 
 function Bush(pos, ch) {
 	this.pos = pos;
@@ -112,12 +121,14 @@ function Enemy(pos, ch) {
 }
 Enemy.prototype.type = "enemy";
 
-function wArtifact(pos) {
-	this.basePos = this.pos = pos.plus(new Vector(0.2, 0.1));
-	this.size = new Vector(0.6, 0.6);
-	this.wobble = Math.random() * Math.PI * 2;
+/*function infoMarco(pos, ch) {
+	this.pos = pos;
+	this.size = new Vector (1, 2);
+	if (ch == "M") {
+		this.speed = new Vector (0, 0);
+	}
 }
-wArtifact.prototype.type = "wartifact";
+infoMarco.prototype.type = "wisdom";*/
 
 function elmnt(name, className) {
 	var elmnt = document.createElement(name);
@@ -264,6 +275,8 @@ Hand.prototype.act = function(step, level) {
 		this.pos = newPos;
 	else
 		this.speed = this.speed.times(-1);
+
+	//  *** Make object grow/shrink instead of travel
 };
 
 Enemy.prototype.act = function(step, level) {
@@ -274,7 +287,10 @@ Enemy.prototype.act = function(step, level) {
 		this.pos = this.repeatPos;
 	else
 		this.speed = this.speed.times(-1);
+
+	// *** Needs roaming boundaries
 }
+
 
 var wobbleSpeed = 8;
 var wobbleDist = 0.07;
@@ -298,6 +314,8 @@ playerProp.prototype.moveX = function(step, level, keys) {
 	this.speed.x = 0;
 	if (keys.left) this.speed.x -= playerXSpeed;
 	if (keys.right) this.speed.x += playerXSpeed;
+
+	//  *** Increase player speed after a certain level
 
 	var motion = new Vector(this.speed.x * step, 0);
 	var newPos = this.pos.plus(motion);
@@ -357,7 +375,7 @@ Level.prototype.playerCollide = function(type, actor) {
 	else if (type == "bartifact" || type == "wartifact") {
 		this.actors = this.actors.filter(function(other) {
 			return other != actor;
-		});
+	});
 	if (!this.actors.some(function(actor) {
 			return actor.type == "bartifact" || actor.type == "wartifact";
 		})) {
