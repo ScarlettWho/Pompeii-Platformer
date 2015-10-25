@@ -7,12 +7,12 @@
 .bush		   { background: rgb(51, 102, 0);	}
 .hand		   {background: rgb(153, 153, 0);	}
 .enemy		   {background: rgb(76, 0, 153);	}
+.wisdom		   {background: rgb(255, 153,153);	}
 
 .actor		   { position: absolute;	}
 .bartifact	   { background: rgb(64, 64, 64);	}
 .wartifact	   { background: rgb(224, 224, 224);	}
 .player		   { background: rgb(153, 0, 0);	}
-.brkblWall		   { background: rgb(30, 40, 50);	}
 
 .game {
 	overflow: hidden;
