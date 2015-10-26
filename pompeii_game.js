@@ -6,8 +6,8 @@ var activeChars = {
 	"A": wArtifact,		//  white stone will spin or wobble faster than black stone
 	"h": Hand,			//  hands will reach up from the ground and move up and down
 	"N": Enemy,			//  enemies will pace in small areas
-	//"M": infoMarco	//  Marco will alert player
-	//"#": Friend,		//  Marco will move alonside player
+	"M": wiseMarco,		//  Marco will alert player
+	//"#": Friend,		//  Marco will move alongside player
 	//"V": Boss			//  Boss will move negatively across the level as in a race
 };
 
@@ -37,8 +37,8 @@ function Level(blueprint) {
 				fieldType = "hand";
 			else if (ch == "N")
 				fieldType = "enemy";
-			//else if (ch == "M");
-				//fieldType = "wisdom";
+			else if (ch == "M")
+				fieldType = "wisdom";
 			gridLine.push(fieldType);
 		}
 
@@ -74,7 +74,7 @@ Vector.prototype.times = function(factor) {
 //  This function outlines and controls the properties of the player
 function playerProp(pos) {
 	this.pos = pos.plus(new Vector(0, -1));
-	this.size = new Vector (0.8, 1.5);
+	this.size = new Vector (0.8, 2.2);
 	this.speed = new Vector(0,0);
 }
 playerProp.prototype.type = "player";
@@ -121,14 +121,14 @@ function Enemy(pos, ch) {
 }
 Enemy.prototype.type = "enemy";
 
-/*function infoMarco(pos, ch) {
+function wiseMarco(pos, ch) {
 	this.pos = pos;
-	this.size = new Vector (1, 2);
+	this.size = new Vector (1, 1);
 	if (ch == "M") {
 		this.speed = new Vector (0, 0);
 	}
 }
-infoMarco.prototype.type = "wisdom";*/
+wiseMarco.prototype.type = "wisdom";
 
 function elmnt(name, className) {
 	var elmnt = document.createElement(name);
@@ -220,7 +220,7 @@ Level.prototype.obstacleAt = function(pos, size) {
 	if (xStart < 0 || xEnd > this.width || yStart < 0)
 		return "wall";
 	if (yEnd > this.height)
-		return "bush", "hand", "enemy";
+		return "bush", "hand", "enemy", "wisdom";
 
 	for (var y = yStart; y < yEnd; y++) {
 		for (var x = xStart; x < xEnd; x++) {
@@ -289,6 +289,16 @@ Enemy.prototype.act = function(step, level) {
 		this.speed = this.speed.times(-1);
 
 	// *** Needs roaming boundaries
+}
+
+wiseMarco.prototype.act = function(step, level) {
+	var newPos = this.pos.plus(this.speed.times(step));
+	if (!level.obstacleAt(newPos, this.size))
+		this.pos = newPos;
+	else if (this.repeatPos)
+		this.pos = this.repeatPos;
+	else
+		this.speed = this.speed.times(-1);
 }
 
 
@@ -371,6 +381,13 @@ Level.prototype.playerCollide = function(type, actor) {
 		type == "enemy" && this.status == null) {
 		this.status = "lost"
 		this.finishDelay = 1;
+	}
+	else if (type == "wisdom") {
+	
+	//  *** Alert the player with information
+		this.actors = this.actors.filter(function(other) {
+			return other != actor;
+		});
 	}
 	else if (type == "bartifact" || type == "wartifact") {
 		this.actors = this.actors.filter(function(other) {
