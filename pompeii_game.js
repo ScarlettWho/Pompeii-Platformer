@@ -104,8 +104,8 @@ function Bush(pos, ch) {
 Bush.prototype.type = "bush";
 
 function Hand(pos, ch) {
-	this.pos = pos;
-	this.size = new Vector(0.7, 1);
+	this.pos = pos.plus(new Vector(0, -1.2));
+	this.size = new Vector(0.7, 2);
 	if (ch == "h") {
 		this.speed = new Vector(0, 2);
 	}
@@ -113,10 +113,10 @@ function Hand(pos, ch) {
 Hand.prototype.type = "hand";
 
 function Enemy(pos, ch) {
-	this.pos = pos;
-	this.size = new Vector (1, 1);
+	this.pos = pos.plus(new Vector(0, -1));
+	this.size = new Vector (1, 2);
 	if (ch == "N") {
-		this.speed = new Vector (1.5, 0);
+		this.speed = new Vector (2, 0);
 	}
 }
 Enemy.prototype.type = "enemy";
