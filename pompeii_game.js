@@ -73,7 +73,7 @@ Vector.prototype.times = function(factor) {
 
 //  This function outlines and controls the properties of the player
 function playerProp(pos) {
-	this.pos = pos.plus(new Vector(0, -1));
+	this.pos = pos.plus(new Vector(0, -1.2));
 	this.size = new Vector (0.8, 2.2);
 	this.speed = new Vector(0,0);
 }
@@ -320,12 +320,24 @@ wArtifact.prototype.act = function(step) {
 var maxStep = 0.05;
 var playerXSpeed = 7;
 
+/*function atLevel(CurrentLevel) {
+	n = CurrentLevel + 1;
+		return n;
+}*/
+
 playerProp.prototype.moveX = function(step, level, keys) {
-	this.speed.x = 0;
-	if (keys.left) this.speed.x -= playerXSpeed;
-	if (keys.right) this.speed.x += playerXSpeed;
+
+	/*var n = atLevel();
+	for (n; n < 4;) {*/
+		this.speed.x = 0;
+		if (keys.left) this.speed.x -= playerXSpeed;
+		if (keys.right) this.speed.x += playerXSpeed;
+	//};
 
 	//  *** Increase player speed after a certain level
+	//  I have a partial function created to get the current level, return the level,
+	//  and determine if the player is passed level 3, at which point the player's 
+	//  speed increases
 
 	var motion = new Vector(this.speed.x * step, 0);
 	var newPos = this.pos.plus(motion);
@@ -372,6 +384,11 @@ playerProp.prototype.act = function(step, level, keys) {
 	if (level.status == "lost") {
 		this.pos.y += step;
 		this.size.y -= step;
+		this.size.x += step;
+	}
+
+	if (level.status == "won") {
+		this.size.x -= step;
 	}
 };
 
@@ -441,17 +458,17 @@ function runAnimation(frameFunc) {
 
 var arrows = trackKeys(arrowCodes);
 
-function runLevel(level, Display, next) {
+function runLevel(level, Display, ifdone) {
 	var display = new Display(document.body, level);
 
 	runAnimation(function(step) {
 		level.animate(step, arrows);
 		display.drawFrame(step);
 		if (level.done()) {
-			display.clear;
+			display.clear();
 			console.log("Cleared");
-			if (next)
-				next(level.status);
+			if (ifdone)
+				ifdone(level.status);
 			return false;
 		}
 	});
