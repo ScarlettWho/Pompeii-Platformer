@@ -30,7 +30,17 @@ function Level(blueprint) {
 			if (Actor)
 				this.actors.push(new Actor(new Vector(x,y), ch));  //  Creates a new actor at the grid position
 			else if (ch == "x")
-				fieldType = "wall";
+				fieldType = "underground";
+			else if (ch == "X")
+				fieldType = "topsurface";
+			else if (ch == "k")
+				fieldType = "cornerleft";
+			else if (ch == "K")
+				fieldType = "cornerright";
+			else if (ch == "S")
+				fieldType = "rightsideground";
+			else if (ch == "s")
+				fieldType = "leftsideground";
 			else if (ch == "b")
 				fieldType = "bush";
 			else if (ch == "h")
@@ -218,7 +228,7 @@ Level.prototype.obstacleAt = function(pos, size) {
 	var yEnd = Math.ceil(pos.y + size.y);
 
 	if (xStart < 0 || xEnd > this.width || yStart < 0)
-		return "wall";
+		return "topsurface";
 	if (yEnd > this.height)
 		return "bush", "hand", "enemy", "wisdom";
 
@@ -481,8 +491,9 @@ function runGame(plans, Display) {
 				startLevel(n);
 			else if (n < plans.length - 1)
 				startLevel(n + 1);
-			else
+			else if (n == plans.length)
 				console.log("Winner!");
+				alert("You win! Leave things in the ground!");
 		});
 	}
 	startLevel(0);
