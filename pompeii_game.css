@@ -1,4 +1,7 @@
-.background 	{ background: rgb(0, 204, 204);
+.background 	{ background-image: url(http://orig14.deviantart.net/252c/f/2015/298/1/7/pompeiibackground_by_classicmistake92-d9edlez.jpg);
+				  background-repeat: no-repeat;
+				  background-attachment: fixed;
+				  background-position: 10px 0px;
 				  table-layout: fixed;
 				  border-spacing: 0;	}
 
@@ -12,7 +15,9 @@
 .actor		   { position: absolute;	}
 .bartifact	   { background: rgb(64, 64, 64);	}
 .wartifact	   { background: rgb(224, 224, 224);	}
-.player		   { background: rgb(153, 0, 0);	}
+.player		   { background-image: url(http://img07.deviantart.net/ed6d/i/2015/298/1/1/dougspritesheet_by_classicmistake92-d9eds9i.png);
+				 height: 70px;
+				 width: 30px;}
 
 .game {
 	overflow: hidden;
@@ -28,3 +33,4 @@
 .won .player {
 	box-shadow: -4px -7px 8px white, 4px -7px 8px white;
 }
+
