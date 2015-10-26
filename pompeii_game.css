@@ -6,7 +6,12 @@
 				  border-spacing: 0;	}
 
 .background td { padding: 0;	}
-.wall 		   { background: rgb(102, 102, 0);	}
+.topsurface   { background-image: url(http://orig00.deviantart.net/493e/f/2015/298/2/5/groundtop_by_classicmistake92-d9eep3z.png);	}
+.underground   { background-image: url(http://orig11.deviantart.net/5e6b/f/2015/298/b/e/fillerground_by_classicmistake92-d9eeold.png);}
+.cornerleft	   { background-image: url(http://orig08.deviantart.net/c468/f/2015/298/7/c/groundcornerleft_by_classicmistake92-d9eeol6.png);}
+.cornerright   { background-image: url(http://orig08.deviantart.net/adfc/f/2015/298/e/c/groundcornerright_by_classicmistake92-d9eeol4.png);}
+.leftsideground{ background-image: url(http://orig05.deviantart.net/f2af/f/2015/298/9/f/groundleft_by_classicmistake92-d9eeol1.png);}
+.rightsideground{ background-image: url(http://orig10.deviantart.net/7e71/f/2015/298/1/3/groundright_by_classicmistake92-d9eeokx.png);}
 .bush		   { background-image: url(http://orig01.deviantart.net/c7a9/f/2015/298/c/d/bush_by_classicmistake92-d9eeipo.png);	
 				 background-size: 30px 30px;
 				 background-repeat: no-repeat;	}
