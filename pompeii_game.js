@@ -493,7 +493,7 @@ function runGame(plans, Display) {
 				startLevel(n + 1);
 			else if (n == plans.length)
 				console.log("Winner!");
-				alert("You win! Leave things in the ground!");
+				//alert("You win! Leave things in the ground!");
 		});
 	}
 	startLevel(0);
