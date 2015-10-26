@@ -7,14 +7,20 @@
 
 .background td { padding: 0;	}
 .wall 		   { background: rgb(102, 102, 0);	}
-.bush		   { background: rgb(51, 102, 0);	}
-.hand		   {background: rgb(153, 153, 0);	}
-.enemy		   {background: rgb(76, 0, 153);	}
+.bush		   { background-image: url(http://orig01.deviantart.net/c7a9/f/2015/298/c/d/bush_by_classicmistake92-d9eeipo.png);	
+				 background-size: 30px 30px;
+				 background-repeat: no-repeat;	}
+.hand		   {background-image: url(http://orig11.deviantart.net/871c/f/2015/298/d/3/hand_by_classicmistake92-d9eeiof.png);
+				background-repeat: no-repeat;
+				background-size: 25px 45px;		}
+.enemy		   {background-image: url(http://orig01.deviantart.net/4346/f/2015/298/4/f/enemy_by_classicmistake92-d9eeioo.png);
+				background-repeat: no-repeat;
+				background-size: 35px 60px;	}
 .wisdom		   {background: rgb(255, 153,153);	}
 
 .actor		   { position: absolute;	}
-.bartifact	   { background: rgb(64, 64, 64);	}
-.wartifact	   { background: rgb(224, 224, 224);	}
+.bartifact	   { background-image: url(http://img12.deviantart.net/cc30/i/2015/298/4/b/blackartifact_by_classicmistake92-d9eeipu.png);	}
+.wartifact	   { background-image: url(http://orig06.deviantart.net/9629/f/2015/298/7/0/whiteartifact_by_classicmistake92-d9eeimc.png);	}
 .player		   { background-image: url(http://img07.deviantart.net/ed6d/i/2015/298/1/1/dougspritesheet_by_classicmistake92-d9eds9i.png);
 				 height: 70px;
 				 width: 30px;}
